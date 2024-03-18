@@ -1,6 +1,6 @@
 #![allow(non_upper_case_globals)]
 
-use std::{collections::HashMap, convert::identity, process::exit};
+use std::{collections::HashMap, process::exit};
 
 use crate::{
     insts::Instructions,
@@ -26,23 +26,26 @@ impl CPU {
         let mut current_block = vec![];
         let mut is_block = false;
         let mut block_name: String = "".into();
+        let mut is_string = false;
         for i in insts.chars() {
-            if current_token == "block" {
+            if current_token == "block" && !is_string {
                 is_block = true;
             }
-            if (i == ' ' || i == ',') && is_block && !current_token.is_empty() {
+            if (i == ' ' || i == ',') && is_block && !current_token.is_empty() && !is_string {
                 current_block.push(Instructions::build_from_str(
                     current_token.trim().to_lowercase().as_str(),
                 ));
                 current_token.clear();
-            } else if (i == '\n' || i == '\t') && is_block {
+            } else if i == '"' {
+                is_string = !is_string;
+            } else if (i == '\n' || i == '\t') && is_block && !is_string {
                 if !current_token.trim().is_empty() {
                     current_block.push(Instructions::build_from_str(
                         current_token.trim().to_lowercase().as_str(),
                     ));
                 }
                 current_token.clear();
-            } else if i == ';' && is_block {
+            } else if i == ';' && is_block && !is_string {
                 if !current_token.trim().is_empty() {
                     current_block.push(Instructions::build_from_str(
                         current_token.trim().to_lowercase().as_str(),
@@ -50,7 +53,7 @@ impl CPU {
                 }
                 current_token.clear();
                 current_block.push(Instructions::EOL);
-            } else if i == ':' {
+            } else if i == ':' && !is_string {
                 if !is_block {
                     eprintln!("Invalid block syntax",);
                     exit(69);
@@ -61,7 +64,7 @@ impl CPU {
             } else {
                 current_token.push(i);
             }
-            if current_token == "end" {
+            if current_token == "end" && !is_string {
                 is_block = false;
                 tokens.push(Instructions::BLOCK(
                     block_name.clone(),
@@ -72,7 +75,9 @@ impl CPU {
                 current_block.clear();
                 current_token.clear();
             }
-            current_token = current_token.trim().to_string();
+            if !is_string {
+                current_token = current_token.trim().to_string();
+            }
         }
         self.exec(tokens);
     }
@@ -137,10 +142,11 @@ impl CPU {
                 Instructions::RUN => {
                     let block_name = &tokens[i + 1];
                     match block_name {
-                        Instructions::BLOCKNAME(block_name) => {
+                        Instructions::DATA(block_name) => {
+                            let block_name = block_name.get_str();
                             self.exec(
                                 self.blocks
-                                    .get(block_name)
+                                    .get(&block_name)
                                     .expect("Error: invalid run block command")
                                     .clone(),
                             );
@@ -172,7 +178,9 @@ impl CPU {
                     }
                     i += insts.len() + 3;
                 }
-                Instructions::BLOCKNAME(_) => i += 1,
+                Instructions::DATA(_) => {
+                    i += 1;
+                }
                 aas => {
                     println!("Unimplemented: {:?}", aas);
                     i += 1;

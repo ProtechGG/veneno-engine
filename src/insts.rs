@@ -18,7 +18,6 @@ pub enum Instructions {
     KEYWORD(String),
     BLOCK(String, Vec<Instructions>),
     RUN,
-    BLOCKNAME(String),
     TIMES,
     // REGISTERS
     REG(usize),
@@ -53,7 +52,7 @@ impl Instructions {
                 } else if let Ok(num) = a.parse::<f64>() {
                     Self::DATA(VenObjects::Float(Float::build(num)))
                 } else {
-                    Instructions::BLOCKNAME(stri.to_string())
+                    Instructions::DATA(VenObjects::Str(stri.to_string()))
                 }
             }
         }
@@ -69,8 +68,8 @@ impl Instructions {
             Self::REG(rid) => regs[*rid].clone(),
             Self::DATA(data) => data.clone(),
             Self::ACC => acc,
-            _ => {
-                eprintln!("Incorrect register...");
+            a => {
+                eprintln!("Incorrect register...: {:?}", a);
                 exit(69);
             }
         }

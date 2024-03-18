@@ -1,3 +1,5 @@
+use std::process::exit;
+
 use crate::insts::Instructions;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -19,6 +21,15 @@ impl VenObjects {
         match self {
             VenObjects::Float(float) => Some(float.to_primitive()),
             _ => None,
+        }
+    }
+    pub fn get_str(&self) -> String {
+        match self {
+            VenObjects::Str(name) => name.clone(),
+            a => {
+                eprintln!("Incorrect string: {:?}", a);
+                exit(69);
+            }
         }
     }
 }

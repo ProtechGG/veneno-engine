@@ -1,19 +1,11 @@
+!r=1000
+
 block main:
-	add 5.0, 50.5
-	print acc
-	mov r53, acc
-	add r53, 503
-	print acc
-	run smth
-	times 10 run yada;
+	mov acc, 100000000
+	times 10000 run eat;
 end
 
-block yada:
-	mov acc, 0.1
-	add acc, 0.2
+block eat:
+	times 6 sub acc, 100.6;
 	print acc
-end
-
-block smth:
-	print "HI"
 end
