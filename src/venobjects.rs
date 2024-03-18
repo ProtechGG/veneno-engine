@@ -41,10 +41,12 @@ impl Float {
         for i in stri.chars() {
             if i == '.' {
                 after_point = true;
-            } else if after_point {
+            } else if after_point && i.is_numeric() {
                 after.push(i);
-            } else {
+            } else if i.is_numeric() {
                 before.push(i);
+            } else {
+                println!("alpha : {:?}", i);
             }
         }
         if !after_point {

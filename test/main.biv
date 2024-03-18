@@ -4,18 +4,15 @@ block main:
 	mov r53, acc
 	add r53, 503
 	print acc
-	run paad
 	run smth
+	run yada
 end
 
-block paad:
-	add 5, 5
-	mul acc, 10000
-	pow acc, 10000
+block yada:
+	mov acc, 0.1
+	add acc, 0.2
 	print acc
-	div acc, 1000000
-	print acc
-end	
+end
 
 block smth:
 	print "HI"

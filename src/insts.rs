@@ -19,6 +19,7 @@ pub enum Instructions {
     BLOCK(String, Vec<Instructions>),
     RUN,
     BLOCKNAME(String),
+    TIMES,
     // REGISTERS
     REG(usize),
     ACC,
@@ -41,6 +42,7 @@ impl Instructions {
             "declare" => Instructions::DECLARE,
             "acc" => Instructions::ACC,
             "run" => Instructions::RUN,
+            "times" => Instructions::TIMES,
             a => {
                 if let Some(int) = a.strip_prefix('r') {
                     Instructions::REG(int.parse().expect("Error: invalid character: {a}"))

@@ -86,6 +86,7 @@ impl CPU {
 
                     match tokens[i + 1] {
                         Instructions::REG(id) => self.registers[id] = val,
+                        Instructions::ACC => self.acc = val,
                         _ => {
                             eprintln!("Invalid value for mov");
                             exit(69)
@@ -141,7 +142,7 @@ impl CPU {
                             exit(69);
                         }
                     }
-                    i += 1;
+                    i += 2;
                 }
                 Instructions::BLOCKNAME(_) => i += 1,
                 aas => println!("Unimplemented: {:?}", aas),
