@@ -1,26 +1,21 @@
 block main:
-	add 5, 505
+	add 5.0, 50.5
 	print acc
 	mov r53, acc
 	add r53, 503
 	print acc
+	run paad
 	run smth
 end
 
 block paad:
-	mov r55, 66
-	print r55
-	mov r99, 22
-	print r99
-	mov r44, 1212
-	print r44
-	add r44, 66
+	add 5, 5
+	mul acc, 10000
+	pow acc, 10000
 	print acc
-	add r99, acc
+	div acc, 1000000
 	print acc
-	add acc, r55
-	print acc
-	
+end	
 
 block smth:
 	print "HI"

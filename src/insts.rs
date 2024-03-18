@@ -2,7 +2,7 @@
 
 use std::{i64, process::exit};
 
-use crate::venobjects::VenObjects;
+use crate::venobjects::{Float, VenObjects};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Instructions {
@@ -48,6 +48,8 @@ impl Instructions {
                     Self::DATA(VenObjects::Str(a[1..(a.len() - 1)].to_string()))
                 } else if let Ok(num) = a.parse::<i64>() {
                     Self::DATA(VenObjects::Int(num))
+                } else if let Ok(num) = a.parse::<f64>() {
+                    Self::DATA(VenObjects::Float(Float::build(num)))
                 } else {
                     Instructions::BLOCKNAME(stri.to_string())
                 }

@@ -35,18 +35,20 @@ impl Float {
     }
     pub fn build(float: f64) -> Self {
         let stri = float.to_string();
-        let mut before: String = "".into();
-        let mut after: String = "".into();
+        let mut before: String = "0".into();
+        let mut after: String = "0".into();
         let mut after_point = false;
         for i in stri.chars() {
             if i == '.' {
                 after_point = true;
-            }
-            if after_point {
+            } else if after_point {
                 after.push(i);
             } else {
                 before.push(i);
             }
+        }
+        if !after_point {
+            after = "0".into();
         }
         Float {
             before_point: before.parse::<i64>().expect("Unable to convert to float"),

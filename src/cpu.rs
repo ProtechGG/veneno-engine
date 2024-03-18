@@ -78,8 +78,6 @@ impl CPU {
                     if name == "main" {
                         self.exec(insts);
                         exit(0);
-                    } else {
-                        self.blocks.insert(name, insts);
                     }
                 }
                 Instructions::MOV => {
