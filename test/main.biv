@@ -1,0 +1,27 @@
+block main:
+	add 5, 505
+	print acc
+	mov r53, acc
+	add r53, 503
+	print acc
+	run smth
+end
+
+block paad:
+	mov r55, 66
+	print r55
+	mov r99, 22
+	print r99
+	mov r44, 1212
+	print r44
+	add r44, 66
+	print acc
+	add r99, acc
+	print acc
+	add acc, r55
+	print acc
+	
+
+block smth:
+	print "HI"
+end
