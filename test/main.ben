@@ -1,4 +1,4 @@
-!r=1000
+#r1000!
 
 block main:
 	mov acc, 100000000
