@@ -1,6 +1,6 @@
 #![allow(non_upper_case_globals)]
 
-use std::{collections::HashMap, process::exit};
+use std::{collections::HashMap, convert::identity, process::exit};
 
 use crate::{
     insts::Instructions,
@@ -42,6 +42,14 @@ impl CPU {
                     ));
                 }
                 current_token.clear();
+            } else if i == ';' && is_block {
+                if !current_token.trim().is_empty() {
+                    current_block.push(Instructions::build_from_str(
+                        current_token.trim().to_lowercase().as_str(),
+                    ));
+                }
+                current_token.clear();
+                current_block.push(Instructions::EOL);
             } else if i == ':' {
                 if !is_block {
                     eprintln!("Invalid block syntax",);
@@ -144,8 +152,31 @@ impl CPU {
                     }
                     i += 2;
                 }
+                Instructions::TIMES => {
+                    let mut insts = vec![];
+                    let times = tokens[i + 1]
+                        .get_val_or_reg_val(self.registers.clone(), self.acc.clone())
+                        .get_int()
+                        .expect("Unable to loop times, invalid amount of loops");
+                    for i in tokens.iter().skip(i + 2) {
+                        if *i == Instructions::EOL {
+                            break;
+                        } else {
+                            insts.push(i.clone());
+                        }
+                    }
+                    let mut id = 0;
+                    while times > id {
+                        self.exec(insts.clone());
+                        id += 1;
+                    }
+                    i += insts.len() + 3;
+                }
                 Instructions::BLOCKNAME(_) => i += 1,
-                aas => println!("Unimplemented: {:?}", aas),
+                aas => {
+                    println!("Unimplemented: {:?}", aas);
+                    i += 1;
+                }
             }
         }
     }

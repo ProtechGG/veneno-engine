@@ -5,7 +5,7 @@ block main:
 	add r53, 503
 	print acc
 	run smth
-	run yada
+	times 10 run yada;
 end
 
 block yada:
