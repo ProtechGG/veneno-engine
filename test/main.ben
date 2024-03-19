@@ -2,17 +2,5 @@
 
 block main:
 	mov acc, 100000000
-	times 10000 run eat;
-end
-
-block hi:
-        mov r5, "Hi. Hello"
-        times 5 print r5
-        add 5, 10
-        print acc
-
-block eat:
-	times 6 sub acc, 100.6;
-	print acc
-        times 5 run hi;
+	times 10000 print acc;
 end

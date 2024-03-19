@@ -3,6 +3,7 @@
 use std::{collections::HashMap, process::exit};
 
 use crate::{
+    error::Error,
     insts::Instructions,
     venobjects::{Float, VenObjects},
 };
@@ -28,8 +29,24 @@ impl CPU {
         let mut block_name: String = "".into();
         let mut is_string = false;
         for i in insts.chars() {
+            println!("{:?} : {:?} : {:?}", self.blocks, tokens, current_token);
             if current_token == "block" && !is_string {
                 is_block = true;
+            }
+            if current_token.starts_with('#') && current_token.ends_with('!') {
+                current_token.remove(0);
+                current_token.remove(current_token.len() - 1);
+                match current_token.remove(0) {
+                    'r' => self.init(
+                        current_token
+                            .parse::<usize>()
+                            .expect("Cannot initialize registers"),
+                    ),
+                    a => {
+                        eprintln!("Invalid command: {}", a)
+                    }
+                }
+                current_token.clear();
             }
             if (i == ' ' || i == ',') && is_block && !current_token.is_empty() && !is_string {
                 current_block.push(Instructions::build_from_str(
@@ -79,6 +96,7 @@ impl CPU {
                 current_token = current_token.trim().to_string();
             }
         }
+        println!("{:?}", tokens);
         self.exec(tokens);
     }
     pub fn exec(&mut self, tokens: Vec<Instructions>) {
@@ -97,13 +115,13 @@ impl CPU {
                     let val = tokens[i + 2].clone();
                     let val = val.get_val_or_reg_val(self.registers.clone(), self.acc.clone());
 
-                    match tokens[i + 1] {
+                    match tokens[i + 1].clone() {
                         Instructions::REG(id) => self.registers[id] = val,
                         Instructions::ACC => self.acc = val,
-                        _ => {
-                            eprintln!("Invalid value for mov");
-                            exit(69)
-                        }
+                        a => Error::throw(
+                            Error::INVALID_VALUE_FOR_MOVE,
+                            Some(format!("{:?}", a).as_str()),
+                        ),
                     }
                     i += 3;
                 }
@@ -151,10 +169,10 @@ impl CPU {
                                     .clone(),
                             );
                         }
-                        a => {
-                            eprintln!("Invalid block name after run command: {:?}", a);
-                            exit(69);
-                        }
+                        a => Error::throw(
+                            Error::INVALID_RUN_BLOCK_SYNTAX,
+                            Some(format!("{:?}", a).as_str()),
+                        ),
                     }
                     i += 2;
                 }
@@ -193,9 +211,12 @@ impl CPU {
             Instructions::REG(rid) => self.registers[rid].clone(),
             Instructions::ACC => self.acc.clone(),
             Instructions::DATA(reg) => reg.clone(),
-            _ => {
-                eprintln!("Error invalid register: {:?}", token);
-                exit(68);
+            a => {
+                Error::throw(
+                    Error::INVALID_REGISTER_OR_VALUE,
+                    Some(format!("{:?}", a).as_str()),
+                );
+                VenObjects::Int(0)
             }
         }
     }
