@@ -8,6 +8,7 @@ pub enum VenObjects {
     Float(f64),
     Str(String),
     Class(String, Vec<Instructions>),
+    Bool(bool),
     Function(String, Vec<Instructions>),
 }
 impl VenObjects {
@@ -30,6 +31,12 @@ impl VenObjects {
                 eprintln!("Incorrect string: {:?}", a);
                 exit(69);
             }
+        }
+    }
+    pub fn get_bool(&self) -> Option<bool> {
+        match self {
+            VenObjects::Bool(bol) => Some(*bol),
+            _ => None,
         }
     }
 }

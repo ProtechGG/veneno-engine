@@ -1,8 +1,7 @@
 #![allow(non_upper_case_globals)]
 
-use std::{collections::HashMap, process::exit};
-
 use crate::{error::Error, insts::Instructions, venobjects::VenObjects};
+use std::{collections::HashMap, process::exit};
 
 #[derive(Debug)]
 pub struct CPU {
@@ -43,24 +42,37 @@ impl CPU {
                     }
                     i += 3;
                 }
+                Instructions::AND => {
+                    self.operate_bool(i, &tokens, |x, y| x && y);
+                    i += 3;
+                }
+                Instructions::OR => {
+                    self.operate_bool(i, &tokens, |x, y| x || y);
+                    i += 3;
+                }
+                Instructions::XOR => {
+                    self.operate_bool(i, &tokens, |x, y| x ^ y);
+                    i += 3;
+                }
+                Instructions::ROOT => self.operate_int(i, &tokens, |x, y| x.powf(1.0 / y)),
                 Instructions::ADD => {
-                    self.operate(i, tokens.clone(), |x, y| x + y);
+                    self.operate_int(i, &tokens, |x, y| x + y);
                     i += 3;
                 }
                 Instructions::SUB => {
-                    self.operate(i, tokens.clone(), |x, y| x - y);
+                    self.operate_int(i, &tokens, |x, y| x - y);
                     i += 3;
                 }
                 Instructions::DIV => {
-                    self.operate(i, tokens.clone(), |x, y| x / y);
+                    self.operate_int(i, &tokens, |x, y| x / y);
                     i += 3;
                 }
                 Instructions::MUL => {
-                    self.operate(i, tokens.clone(), |x, y| x * y);
+                    self.operate_int(i, &tokens, |x, y| x * y);
                     i += 3;
                 }
                 Instructions::POW => {
-                    self.operate(i, tokens.clone(), |x, y| x.powf(y));
+                    self.operate_int(i, &tokens, |x, y| x.powf(y));
                     i += 3;
                 }
                 Instructions::PRINT => {
@@ -69,6 +81,7 @@ impl CPU {
                         VenObjects::Int(num) => print!("{}", num),
                         VenObjects::Str(stri) => print!("{}", stri),
                         VenObjects::Float(float) => print!("{}", float),
+                        VenObjects::Bool(bol) => print!("{}", bol),
                         VenObjects::Class(name, insts) => print!("{}: {:?}", name, insts),
                         VenObjects::Function(name, body) => print!("{}: {:?}", name, body),
                     }
@@ -80,6 +93,7 @@ impl CPU {
                         VenObjects::Int(num) => println!("{}", num),
                         VenObjects::Str(stri) => println!("{}", stri),
                         VenObjects::Float(float) => println!("{}", float),
+                        VenObjects::Bool(bol) => println!("{}", bol),
                         VenObjects::Class(name, insts) => println!("{}: {:?}", name, insts),
                         VenObjects::Function(name, body) => println!("{}: {:?}", name, body),
                     }
@@ -155,7 +169,7 @@ impl CPU {
         }
     }
 
-    fn operate<F: Fn(f64, f64) -> f64>(&mut self, i: usize, tokens: Vec<Instructions>, f: F) {
+    fn operate_int<F: Fn(f64, f64) -> f64>(&mut self, i: usize, tokens: &[Instructions], f: F) {
         let to = self.get_reg(&tokens[i + 1]);
         let from = self.get_reg(&tokens[i + 2]).get_int();
         if let Some(to) = to.get_int() {
@@ -188,6 +202,29 @@ impl CPU {
             if let Some(rid) = self.get_reg_id(&tokens[i + 1]) {
                 self.registers[rid] = self.acc.clone();
             }
+        }
+    }
+
+    fn operate_bool<F: Fn(bool, bool) -> bool>(&mut self, i: usize, tokens: &[Instructions], f: F) {
+        let to = self.get_reg(&tokens[i + 1]).get_bool();
+        let from = self.get_reg(&tokens[i + 1]).get_bool();
+        if let Some(to) = to {
+            if let Some(from) = from {
+                self.acc = VenObjects::Bool(f(to, from));
+                if let Some(regid) = self.get_reg_id(&tokens[i + 1]) {
+                    self.registers[regid] = self.acc.clone();
+                }
+            } else {
+                Error::throw(
+                    Error::INVALID_BOOL_OPERAND,
+                    Some(format!("{:?}, {:?}", to, from).as_str()),
+                );
+            }
+        } else {
+            Error::throw(
+                Error::INVALID_BOOL_OPERAND,
+                Some(format!("{:?}, {:?}", to, from).as_str()),
+            );
         }
     }
 }

@@ -12,6 +12,9 @@ pub enum Instructions {
     MUL,
     POW,
     ROOT,
+    AND,
+    OR,
+    XOR,
     PRINT,
     MOV,
     DECLARE,
@@ -20,6 +23,8 @@ pub enum Instructions {
     RUN,
     PRINTLN,
     TIMES,
+    TRUE,
+    FALSE,
     // REGISTERS
     REG(usize),
     ACC,
@@ -44,6 +49,11 @@ impl Instructions {
             "run" => Instructions::RUN,
             "times" => Instructions::TIMES,
             "println" => Instructions::PRINTLN,
+            "and" => Instructions::AND,
+            "or" => Instructions::OR,
+            "xor" => Instructions::XOR,
+            "true" => Instructions::TRUE,
+            "false" => Instructions::FALSE,
             a => {
                 if let Some(int) = a.strip_prefix('r') {
                     Instructions::REG(int.parse().expect("Error: invalid character: {a}"))
@@ -65,11 +75,13 @@ impl Instructions {
             _ => None,
         }
     }
-    pub fn get_val_or_reg_val(&self, regs: &Vec<VenObjects>, acc: &VenObjects) -> VenObjects {
+    pub fn get_val_or_reg_val(&self, regs: &[VenObjects], acc: &VenObjects) -> VenObjects {
         match self {
             Self::REG(rid) => regs[*rid].clone(),
             Self::DATA(data) => data.clone(),
             Self::ACC => acc.clone(),
+            Self::TRUE => VenObjects::Bool(true),
+            Self::FALSE => VenObjects::Bool(false),
             a => {
                 eprintln!("Incorrect register...: {:?}", a);
                 exit(69);
