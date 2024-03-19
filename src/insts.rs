@@ -2,9 +2,9 @@
 
 use std::{i64, process::exit};
 
-use crate::venobjects::{Float, VenObjects};
+use crate::venobjects::VenObjects;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Instructions {
     ADD,
     SUB,
@@ -50,7 +50,7 @@ impl Instructions {
                 } else if let Ok(num) = a.parse::<i64>() {
                     Self::DATA(VenObjects::Int(num))
                 } else if let Ok(num) = a.parse::<f64>() {
-                    Self::DATA(VenObjects::Float(Float::build(num)))
+                    Self::DATA(VenObjects::Float(num))
                 } else {
                     Instructions::DATA(VenObjects::Str(stri.to_string()))
                 }
@@ -63,11 +63,11 @@ impl Instructions {
             _ => None,
         }
     }
-    pub fn get_val_or_reg_val(&self, regs: Vec<VenObjects>, acc: VenObjects) -> VenObjects {
+    pub fn get_val_or_reg_val(&self, regs: &Vec<VenObjects>, acc: &VenObjects) -> VenObjects {
         match self {
             Self::REG(rid) => regs[*rid].clone(),
             Self::DATA(data) => data.clone(),
-            Self::ACC => acc,
+            Self::ACC => acc.clone(),
             a => {
                 eprintln!("Incorrect register...: {:?}", a);
                 exit(69);

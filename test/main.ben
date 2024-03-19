@@ -1,6 +1,15 @@
 #r1000!
 
 block main:
-	mov acc, 100000000
-	times 10000 print acc;
+	mov r50, 0.1
+	mov r60, 0.2
+	times 100 run hi_print;
+	print "Ended"
+	print acc
+	
+end
+
+block hi_print:
+	add r60, r50
+	print r60
 end
