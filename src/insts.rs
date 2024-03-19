@@ -18,6 +18,7 @@ pub enum Instructions {
     KEYWORD(String),
     BLOCK(String, Vec<Instructions>),
     RUN,
+    PRINTLN,
     TIMES,
     // REGISTERS
     REG(usize),
@@ -42,6 +43,7 @@ impl Instructions {
             "acc" => Instructions::ACC,
             "run" => Instructions::RUN,
             "times" => Instructions::TIMES,
+            "println" => Instructions::PRINTLN,
             a => {
                 if let Some(int) = a.strip_prefix('r') {
                     Instructions::REG(int.parse().expect("Error: invalid character: {a}"))

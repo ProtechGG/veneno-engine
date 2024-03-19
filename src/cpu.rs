@@ -66,6 +66,17 @@ impl CPU {
                 Instructions::PRINT => {
                     let text = tokens[i + 1].get_val_or_reg_val(&self.registers, &self.acc);
                     match text {
+                        VenObjects::Int(num) => print!("{}", num),
+                        VenObjects::Str(stri) => print!("{}", stri),
+                        VenObjects::Float(float) => print!("{}", float),
+                        VenObjects::Class(name, insts) => print!("{}: {:?}", name, insts),
+                        VenObjects::Function(name, body) => print!("{}: {:?}", name, body),
+                    }
+                    i += 2;
+                }
+                Instructions::PRINTLN => {
+                    let text = tokens[i + 1].get_val_or_reg_val(&self.registers, &self.acc);
+                    match text {
                         VenObjects::Int(num) => println!("{}", num),
                         VenObjects::Str(stri) => println!("{}", stri),
                         VenObjects::Float(float) => println!("{}", float),
