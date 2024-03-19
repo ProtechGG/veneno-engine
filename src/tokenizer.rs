@@ -76,7 +76,6 @@ impl CPU {
                 current_token = current_token.trim().to_string();
             }
         }
-        println!("{:?}", tokens);
         self.exec(tokens);
     }
 }
