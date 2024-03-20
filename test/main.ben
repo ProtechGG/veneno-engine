@@ -1,10 +1,21 @@
-#r1000!
+#r10!
 
 block main:
-	declare r1, my_boi_result
-	add 5, 5
-	mov r1, acc
-	print my_boi_result
-	
-end
+	declare r1, ohyeah
+	declare r2, noyeah
 
+	mov ohyeah, 500
+	mov noyeah, 600
+
+	println ohyeah
+	println noyeah
+
+	lt ohyeah, noyeah
+	println acc
+	if acc println "lt ltlltltltl";
+
+	gt ohyeah, noyeah
+	println acc
+	if acc println "gt gtggtgtgtgt";
+
+end

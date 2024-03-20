@@ -63,6 +63,19 @@ impl CPU {
                     match tokens[i + 1].clone() {
                         Instructions::REG(id) => self.registers[id] = val,
                         Instructions::ACC => self.acc = val,
+                        Instructions::DATA(VenObjects::Str(alias)) => {
+                            if let Some(&reg_id) = self.aliases.get(&alias) {
+                                self.registers[reg_id] = val;
+                            } else {
+                                Error::throw(
+                                    Error::INVALID_VALUE_FOR_MOVE,
+                                    Some(
+                                        format!("{:?}", Instructions::DATA(VenObjects::Str(alias)))
+                                            .as_str(),
+                                    ),
+                                );
+                            }
+                        }
                         a => Error::throw(
                             Error::INVALID_VALUE_FOR_MOVE,
                             Some(format!("{:?}", a).as_str()),
@@ -82,7 +95,10 @@ impl CPU {
                     self.operate_bool(i, &tokens, |x, y| x ^ y);
                     i += 3;
                 }
-                Instructions::ROOT => self.operate_int(i, &tokens, |x, y| x.powf(1.0 / y)),
+                Instructions::ROOT => {
+                    self.operate_int(i, &tokens, |x, y| x.powf(1.0 / y));
+                    i += 3;
+                }
                 Instructions::ADD => {
                     self.operate_int(i, &tokens, |x, y| x + y);
                     i += 3;
@@ -104,13 +120,16 @@ impl CPU {
                     i += 3;
                 }
                 Instructions::LT => {
-                    self.operate_bool(i, &tokens, |x, y| x < y);
+                    self.operate_int_to_bool(i, &tokens, |x, y| x < y);
+                    i += 3;
                 }
                 Instructions::GT => {
-                    self.operate_bool(i, &tokens, |x, y| x > y);
+                    self.operate_int_to_bool(i, &tokens, |x, y| x > y);
+                    i += 3;
                 }
                 Instructions::EQ => {
-                    self.operate_bool(i, &tokens, |x, y| x == y);
+                    self.operate_int_to_bool(i, &tokens, |x, y| x == y);
+                    i += 3;
                 }
                 Instructions::NOT => {
                     let bool_cond =
@@ -125,6 +144,7 @@ impl CPU {
                         Some(bool_id) => self.registers[bool_id] = self.acc.clone(),
                         None => {}
                     }
+                    i += 2;
                 }
 
                 Instructions::PRINT => {
@@ -174,13 +194,21 @@ impl CPU {
                     i += 2;
                 }
                 Instructions::IF => {
-                    let condition = self.get_reg(&tokens[i + 1]);
+                    let condition = &tokens[i + 1].get_val_or_reg_val(
+                        &self.registers,
+                        &self.acc,
+                        &self.aliases,
+                    );
                     let mut inst = vec![];
                     let mut is_else = vec![];
+
                     for i in tokens.iter().skip(i + 1).enumerate() {
                         if *i.1 == Instructions::EOL {
                             if tokens[i.0 + 1] == Instructions::ELSE {
-                                for i in tokens.iter().skip(i.0 + 2) {
+                                for i in tokens.iter().skip(i.0 + 1) {
+                                    if *i == Instructions::EOL {
+                                        break;
+                                    }
                                     is_else.push(i);
                                 }
                             }
@@ -194,10 +222,11 @@ impl CPU {
                         .expect(&Error::INVALID_BOOL_OPERAND.extract())
                     {
                         self.exec(Some(&inst));
-                        i += inst.len() + 1;
                     } else if !is_else.is_empty() {
                         self.exec(Some(&inst));
+                        i += 3;
                     }
+                    i += 2 + 2;
                 }
                 Instructions::TIMES => {
                     let mut insts = vec![];
@@ -219,11 +248,19 @@ impl CPU {
                     }
                     i += insts.len() + 3;
                 }
+                Instructions::REG(_) => {
+                    i += 1;
+                }
+                Instructions::ACC => {
+                    i += 1;
+                }
+                Instructions::EOL => {
+                    i += 1;
+                }
                 Instructions::DATA(_) => {
                     i += 1;
                 }
-                aas => {
-                    println!("Unimplemented: {:?}", aas);
+                _ => {
                     i += 1;
                 }
             }
@@ -240,6 +277,8 @@ impl CPU {
                     VenObjects::Str(alias.to_string())
                 }
             }
+            Instructions::TRUE => VenObjects::Bool(true),
+            Instructions::FALSE => VenObjects::Bool(false),
             Instructions::DATA(reg) => reg.clone(),
             a => {
                 Error::throw(
@@ -261,6 +300,32 @@ impl CPU {
                 }
             }
             _ => None,
+        }
+    }
+    fn operate_int_to_bool<F: Fn(f64, f64) -> bool>(
+        &mut self,
+        i: usize,
+        tokens: &[Instructions],
+        f: F,
+    ) {
+        let to = tokens[i + 1].get_val_or_reg_val(&self.registers, &self.acc, &self.aliases);
+        let from = tokens[i + 2].get_val_or_reg_val(&self.registers, &self.acc, &self.aliases);
+        let mut can_be_float = false;
+        if to.get_int() == None || from.get_int() == None {
+            can_be_float = true;
+        }
+        if !can_be_float {
+            let to = to.get_int().unwrap();
+            let from = from.get_int().unwrap();
+
+            self.acc = VenObjects::Bool(f(to as f64, from as f64));
+        }
+        if can_be_float {
+            let to = to.get_float().expect(&Error::INVALID_INT_OPERAND.extract());
+            let from = from
+                .get_float()
+                .expect(&Error::INVALID_INT_OPERAND.extract());
+            self.acc = VenObjects::Bool(f(to, from));
         }
     }
 
@@ -301,25 +366,14 @@ impl CPU {
     }
 
     fn operate_bool<F: Fn(bool, bool) -> bool>(&mut self, i: usize, tokens: &[Instructions], f: F) {
-        let to = self.get_reg(&tokens[i + 1]).get_bool();
-        let from = self.get_reg(&tokens[i + 1]).get_bool();
-        if let Some(to) = to {
-            if let Some(from) = from {
-                self.acc = VenObjects::Bool(f(to, from));
-                if let Some(regid) = self.get_reg_id(&tokens[i + 1]) {
-                    self.registers[regid] = self.acc.clone();
-                }
-            } else {
-                Error::throw(
-                    Error::INVALID_BOOL_OPERAND,
-                    Some(format!("{:?}, {:?}", to, from).as_str()),
-                );
-            }
-        } else {
-            Error::throw(
-                Error::INVALID_BOOL_OPERAND,
-                Some(format!("{:?}, {:?}", to, from).as_str()),
-            );
-        }
+        let to = self
+            .get_reg(&tokens[i + 1])
+            .get_bool()
+            .expect(&Error::INVALID_BOOL_OPERAND.extract());
+        let from = self
+            .get_reg(&tokens[i + 2])
+            .get_bool()
+            .expect(&Error::INVALID_BOOL_OPERAND.extract());
+        self.acc = VenObjects::Bool(f(to, from));
     }
 }
