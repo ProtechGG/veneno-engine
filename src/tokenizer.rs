@@ -76,6 +76,6 @@ impl CPU {
                 current_token = current_token.trim().to_string();
             }
         }
-        self.exec(tokens);
+        self.tokens = tokens;
     }
 }

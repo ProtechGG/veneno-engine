@@ -1,6 +1,6 @@
 #![allow(non_camel_case_types, dead_code)]
 
-use std::{i64, process::exit};
+use std::{collections::HashMap, i64, process::exit};
 
 use crate::venobjects::VenObjects;
 
@@ -23,8 +23,14 @@ pub enum Instructions {
     RUN,
     PRINTLN,
     TIMES,
+    IF,
+    ELSE,
     TRUE,
     FALSE,
+    EQ,
+    GT,
+    LT,
+    NOT,
     // REGISTERS
     REG(usize),
     ACC,
@@ -46,14 +52,20 @@ impl Instructions {
             "mov" => Instructions::MOV,
             "declare" => Instructions::DECLARE,
             "acc" => Instructions::ACC,
-            "run" => Instructions::RUN,
             "times" => Instructions::TIMES,
+            "run" => Instructions::RUN,
+            "else" => Instructions::ELSE,
+            "if" => Instructions::IF,
             "println" => Instructions::PRINTLN,
             "and" => Instructions::AND,
             "or" => Instructions::OR,
             "xor" => Instructions::XOR,
             "true" => Instructions::TRUE,
             "false" => Instructions::FALSE,
+            "eq" => Instructions::EQ,
+            "gt" => Instructions::GT,
+            "lt" => Instructions::LT,
+            "not" => Instructions::NOT,
             a => {
                 if let Some(int) = a.strip_prefix('r') {
                     Instructions::REG(int.parse().expect("Error: invalid character: {a}"))
@@ -75,9 +87,21 @@ impl Instructions {
             _ => None,
         }
     }
-    pub fn get_val_or_reg_val(&self, regs: &[VenObjects], acc: &VenObjects) -> VenObjects {
+    pub fn get_val_or_reg_val(
+        &self,
+        regs: &[VenObjects],
+        acc: &VenObjects,
+        aliases: &HashMap<String, usize>,
+    ) -> VenObjects {
         match self {
             Self::REG(rid) => regs[*rid].clone(),
+            Self::DATA(VenObjects::Str(alias)) => {
+                if let Some(&rid) = aliases.get(alias.as_str()) {
+                    regs[rid].clone()
+                } else {
+                    VenObjects::Str(alias.to_string())
+                }
+            }
             Self::DATA(data) => data.clone(),
             Self::ACC => acc.clone(),
             Self::TRUE => VenObjects::Bool(true),

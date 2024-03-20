@@ -1,4 +1,4 @@
-#![allow(non_upper_case_globals)]
+#![allow(non_upper_case_globals, clippy::expect_fun_call)]
 
 use crate::{error::Error, insts::Instructions, venobjects::VenObjects};
 use std::{collections::HashMap, process::exit};
@@ -8,6 +8,8 @@ pub struct CPU {
     pub registers: Vec<VenObjects>,
     pub acc: VenObjects,
     pub blocks: HashMap<String, Vec<Instructions>>,
+    pub aliases: HashMap<String, usize>,
+    pub tokens: Vec<Instructions>,
 }
 
 impl CPU {
@@ -16,7 +18,17 @@ impl CPU {
             self.registers.push(VenObjects::Int(0));
         }
     }
-    pub fn exec(&mut self, tokens: Vec<Instructions>) {
+    pub fn exec(&mut self, tokens: Option<&Vec<Instructions>>) {
+        let insts;
+        match tokens {
+            Some(tok) => insts = tok,
+            None => {
+                let temp = self.tokens.clone();
+                self.exec(Some(&temp));
+                return;
+            }
+        }
+        let tokens = insts;
         let mut i = 0;
         while i < tokens.len() {
             match tokens[i].clone() {
@@ -24,13 +36,29 @@ impl CPU {
                     let mut insts = insts;
                     insts.remove(0);
                     if name == "main" {
-                        self.exec(insts);
+                        self.exec(Some(&insts));
                         exit(0);
                     }
                 }
+                Instructions::DECLARE => {
+                    if tokens[i + 1] == Instructions::ACC {
+                        Error::throw(
+                            Error::CANNOT_DECLARE_ACC,
+                            Some("Cannot declare acc, acc is a special value"),
+                        );
+                    }
+                    let reg = self
+                        .get_reg_id(&tokens[i + 1])
+                        .expect(&Error::INVALID_REGISTER_OR_VALUE.extract());
+                    let alias = &tokens[i + 2]
+                        .extract_value()
+                        .expect(&Error::INVALID_DECLARATION.extract());
+                    self.aliases.insert(alias.get_str(), reg);
+                    i += 3;
+                }
                 Instructions::MOV => {
                     let val = tokens[i + 2].clone();
-                    let val = val.get_val_or_reg_val(&self.registers, &self.acc);
+                    let val = val.get_val_or_reg_val(&self.registers, &self.acc, &self.aliases);
 
                     match tokens[i + 1].clone() {
                         Instructions::REG(id) => self.registers[id] = val,
@@ -75,8 +103,33 @@ impl CPU {
                     self.operate_int(i, &tokens, |x, y| x.powf(y));
                     i += 3;
                 }
+                Instructions::LT => {
+                    self.operate_bool(i, &tokens, |x, y| x < y);
+                }
+                Instructions::GT => {
+                    self.operate_bool(i, &tokens, |x, y| x > y);
+                }
+                Instructions::EQ => {
+                    self.operate_bool(i, &tokens, |x, y| x == y);
+                }
+                Instructions::NOT => {
+                    let bool_cond =
+                        tokens[i + 1].get_val_or_reg_val(&self.registers, &self.acc, &self.aliases);
+                    self.acc = VenObjects::Bool(
+                        !bool_cond
+                            .get_bool()
+                            .expect(&Error::INVALID_BOOL_OPERAND.extract()),
+                    );
+                    let bool_id = self.get_reg_id(&tokens[i + 1]);
+                    match bool_id {
+                        Some(bool_id) => self.registers[bool_id] = self.acc.clone(),
+                        None => {}
+                    }
+                }
+
                 Instructions::PRINT => {
-                    let text = tokens[i + 1].get_val_or_reg_val(&self.registers, &self.acc);
+                    let text =
+                        tokens[i + 1].get_val_or_reg_val(&self.registers, &self.acc, &self.aliases);
                     match text {
                         VenObjects::Int(num) => print!("{}", num),
                         VenObjects::Str(stri) => print!("{}", stri),
@@ -88,7 +141,8 @@ impl CPU {
                     i += 2;
                 }
                 Instructions::PRINTLN => {
-                    let text = tokens[i + 1].get_val_or_reg_val(&self.registers, &self.acc);
+                    let text =
+                        tokens[i + 1].get_val_or_reg_val(&self.registers, &self.acc, &self.aliases);
                     match text {
                         VenObjects::Int(num) => println!("{}", num),
                         VenObjects::Str(stri) => println!("{}", stri),
@@ -104,12 +158,13 @@ impl CPU {
                     match block_name {
                         Instructions::DATA(block_name) => {
                             let block_name = block_name.get_str();
-                            self.exec(
-                                self.blocks
+                            self.exec(Some(
+                                &self
+                                    .blocks
                                     .get(&block_name)
                                     .expect("Error: invalid run block command")
                                     .clone(),
-                            );
+                            ));
                         }
                         a => Error::throw(
                             Error::INVALID_RUN_BLOCK_SYNTAX,
@@ -118,10 +173,36 @@ impl CPU {
                     }
                     i += 2;
                 }
+                Instructions::IF => {
+                    let condition = self.get_reg(&tokens[i + 1]);
+                    let mut inst = vec![];
+                    let mut is_else = vec![];
+                    for i in tokens.iter().skip(i + 1).enumerate() {
+                        if *i.1 == Instructions::EOL {
+                            if tokens[i.0 + 1] == Instructions::ELSE {
+                                for i in tokens.iter().skip(i.0 + 2) {
+                                    is_else.push(i);
+                                }
+                            }
+                            break;
+                        } else {
+                            inst.push(i.1.clone());
+                        }
+                    }
+                    if condition
+                        .get_bool()
+                        .expect(&Error::INVALID_BOOL_OPERAND.extract())
+                    {
+                        self.exec(Some(&inst));
+                        i += inst.len() + 1;
+                    } else if !is_else.is_empty() {
+                        self.exec(Some(&inst));
+                    }
+                }
                 Instructions::TIMES => {
                     let mut insts = vec![];
                     let times = tokens[i + 1]
-                        .get_val_or_reg_val(&self.registers, &self.acc)
+                        .get_val_or_reg_val(&self.registers, &self.acc, &self.aliases)
                         .get_int()
                         .unwrap_or_else(|| panic!("{}", Error::INVALID_RUN_BLOCK_SYNTAX.extract()));
                     for i in tokens.iter().skip(i + 2) {
@@ -133,7 +214,7 @@ impl CPU {
                     }
                     let mut id = 0;
                     while times > id {
-                        self.exec(insts.clone());
+                        self.exec(Some(&insts));
                         id += 1;
                     }
                     i += insts.len() + 3;
@@ -152,6 +233,13 @@ impl CPU {
         match token {
             Instructions::REG(rid) => self.registers[*rid].clone(),
             Instructions::ACC => self.acc.clone(),
+            Instructions::DATA(VenObjects::Str(alias)) => {
+                if let Some(&rid) = self.aliases.get(alias.as_str()) {
+                    self.registers[rid].clone()
+                } else {
+                    VenObjects::Str(alias.to_string())
+                }
+            }
             Instructions::DATA(reg) => reg.clone(),
             a => {
                 Error::throw(
@@ -165,6 +253,13 @@ impl CPU {
     fn get_reg_id(&self, token: &Instructions) -> Option<usize> {
         match token {
             Instructions::REG(num) => Some(*num),
+            Instructions::DATA(VenObjects::Str(alias)) => {
+                if let Some(&rid) = self.aliases.get(alias) {
+                    Some(rid)
+                } else {
+                    None
+                }
+            }
             _ => None,
         }
     }
@@ -180,7 +275,7 @@ impl CPU {
                 }
             } else {
                 let from = tokens[i + 2]
-                    .get_val_or_reg_val(&self.registers, &self.acc)
+                    .get_val_or_reg_val(&self.registers, &self.acc, &self.aliases)
                     .get_float()
                     .unwrap();
                 self.acc = VenObjects::Float(f(to as f64, from));
@@ -190,11 +285,11 @@ impl CPU {
             }
         } else {
             let to = tokens[i + 1]
-                .get_val_or_reg_val(&self.registers, &self.acc)
+                .get_val_or_reg_val(&self.registers, &self.acc, &self.aliases)
                 .get_float()
                 .unwrap();
             let from = tokens[i + 2]
-                .get_val_or_reg_val(&self.registers, &self.acc)
+                .get_val_or_reg_val(&self.registers, &self.acc, &self.aliases)
                 .get_float()
                 .unwrap();
 

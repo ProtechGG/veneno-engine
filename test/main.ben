@@ -1,21 +1,10 @@
 #r1000!
 
 block main:
-	mov r50, 0.1
-	mov r60, 0.2
-	times 100 run hi_print;
-	println "Ended"
-	mov r1, true
-	mov r2, false
-	and r1, r2
-	println acc
-	or r1, r2
-	print acc
-	xor r1, r2
-	print acc
+	declare r1, my_boi_result
+	add 5, 5
+	mov r1, acc
+	print my_boi_result
+	
 end
 
-block hi_print:
-	add r60, r50
-	println r60
-end

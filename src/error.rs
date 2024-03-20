@@ -10,11 +10,14 @@ pub enum Error {
     INVALID_RUN_BLOCK_SYNTAX,
     INVALID_TIMES_LOOP_SYNTAX,
     INVALID_BOOL_OPERAND,
+    INVALID_DECLARATION,
+    CANNOT_DECLARE_ACC,
 }
 
 impl Error {
     pub fn extract(&self) -> String {
         match self {
+            Self::INVALID_DECLARATION => "INVALID DECLARATION/ALIAS SYNTAX".into(),
             Self::INVALID_REGISTER_OR_VALUE => "INVALID REGISTER OR VALUE".into(),
             Self::INVALID_BLOCK_SYNTAX => "INVALID BLOCK SYNTAX".into(),
             Self::INVALID_INT_OPERAND => "INVALID INT OPERANDS".into(),
@@ -22,6 +25,7 @@ impl Error {
             Self::INVALID_RUN_BLOCK_SYNTAX => "INVALID `run block` SYNTAX".into(),
             Self::INVALID_TIMES_LOOP_SYNTAX => "INVALID `times loop` SYNTAX".into(),
             Self::INVALID_BOOL_OPERAND => "INVALID BOOL OPERANDS".into(),
+            Self::CANNOT_DECLARE_ACC => "CANNOT DECLARE ACC".into(),
         }
     }
     pub fn throw(error: Self, errormsg: Option<&str>) {
