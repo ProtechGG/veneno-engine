@@ -224,9 +224,9 @@ impl CPU {
                         self.exec(Some(&inst));
                     } else if !is_else.is_empty() {
                         self.exec(Some(&inst));
-                        i += 3;
+                        i += 4;
                     }
-                    i += 2 + 2;
+                    i += 2 + 3;
                 }
                 Instructions::TIMES => {
                     let mut insts = vec![];
