@@ -39,6 +39,7 @@ impl CPU {
                         self.exec(Some(&insts));
                         exit(0);
                     }
+                    i+=1;
                 }
                 Instructions::DECLARE => {
                     if tokens[i + 1] == Instructions::ACC {
@@ -262,6 +263,7 @@ impl CPU {
                 Instructions::DATA(_) => {
                     i += 1;
                 }
+                Instructions::END => {i+=1; return;}
                 _ => {
                     i += 1;
                 }

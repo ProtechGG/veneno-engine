@@ -35,6 +35,7 @@ pub enum Instructions {
     REG(usize),
     ACC,
     EOL,
+    END,
     // TYPES
     DATA(VenObjects),
 }
@@ -42,6 +43,7 @@ pub enum Instructions {
 impl Instructions {
     pub fn build_from_str(stri: &str) -> Instructions {
         match stri {
+            "end" => Instructions::END,
             "add" => Instructions::ADD,
             "sub" => Instructions::SUB,
             "div" => Instructions::DIV,
