@@ -15,7 +15,7 @@ pub struct CPU {
 impl CPU {
     pub fn init(&mut self, no_of_regs: usize) {
         for _ in 0..no_of_regs {
-            self.registers.push(VenObjects::Int(0));
+            self.registers.push(VenObjects::Empty);
         }
     }
     pub fn exec(&mut self, tokens: Option<&Vec<Instructions>>) {
@@ -157,6 +157,7 @@ impl CPU {
                         VenObjects::Bool(bol) => print!("{}", bol),
                         VenObjects::Class(name, insts) => print!("{}: {:?}", name, insts),
                         VenObjects::Function(name, body) => print!("{}: {:?}", name, body),
+                        VenObjects::Empty => print!("None")
                     }
                     i += 2;
                 }
@@ -170,6 +171,7 @@ impl CPU {
                         VenObjects::Bool(bol) => println!("{}", bol),
                         VenObjects::Class(name, insts) => println!("{}: {:?}", name, insts),
                         VenObjects::Function(name, body) => println!("{}: {:?}", name, body),
+                        VenObjects::Empty => print!("None")
                     }
                     i += 2;
                 }

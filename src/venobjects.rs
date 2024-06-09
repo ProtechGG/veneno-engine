@@ -10,6 +10,7 @@ pub enum VenObjects {
     Class(String, Vec<Instructions>),
     Bool(bool),
     Function(String, Vec<Instructions>),
+    Empty,
 }
 impl VenObjects {
     pub fn get_int(&self) -> Option<i64> {

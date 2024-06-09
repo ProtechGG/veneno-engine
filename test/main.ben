@@ -1,6 +1,6 @@
-#r10!
+#r3!
 
-block main:
+block check:
 	declare r1, ohyeah
 	declare r2, noyeah
 
@@ -18,4 +18,9 @@ block main:
 	println acc
 	if acc println "gt gtggtgtgtgt";
 
+
+block main:
+	times 1000 println 09.12 
 end
+
+

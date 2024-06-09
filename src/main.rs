@@ -9,7 +9,7 @@ fn main() {
     let mut arg = env::args().skip(1);
     let mut cpu = cpu::CPU {
         registers: vec![],
-        acc: VenObjects::Int(0),
+        acc: VenObjects::Empty,
         blocks: HashMap::new(),
         aliases: HashMap::new(),
         tokens: vec![],
